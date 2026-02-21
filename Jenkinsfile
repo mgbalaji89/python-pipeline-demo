@@ -1,20 +1,38 @@
 pipeline {
-    agent any 
+    agent any
 
     stages {
-        stage('Check Environment') {
+
+        stage('Checkout') {
             steps {
-                // Verify Python is installed on the host
-                sh 'python3 --version'
+                checkout scm
             }
         }
-        stage('Run Python') {
+
+        stage('Setup Virtual Environment') {
             steps {
-                // Execute the script directly using the host's Python
                 sh '''
-                    python3 hello.py
+                    python3 -m venv venv
+                    . venv/bin/activate
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
                 '''
             }
+        }
+
+        stage('Run Tests') {
+            steps {
+                sh '''
+                    . venv/bin/activate
+                    pytest --junitxml=report.xml
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            junit 'report.xml'
         }
     }
 }
